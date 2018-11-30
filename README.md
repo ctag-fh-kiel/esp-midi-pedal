@@ -1,0 +1,1 @@
+# Midi pedal for octatrack, allows interaction with pick up machines
