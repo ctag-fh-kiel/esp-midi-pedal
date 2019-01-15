@@ -17,7 +17,7 @@ void app_main()
    ledStates_t ledStateBtn1 = BLUE, ledStateBtn2 = BLUE;
    for(;;){
       ev = btnWaitForEvent();
-      switch(ev){
+      switch(ev.evType){
          case BTN1_CLICK:
             ESP_LOGI("MAIN", "60");
             midiSendNoteOn(11, 60);

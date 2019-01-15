@@ -1,7 +1,12 @@
 #pragma once
+#include <stdint.h>
 
-typedef enum{
-    BTN1_CLICK, BTN2_CLICK
+#define BTN1_CLICK 1
+#define BTN2_CLICK 2
+
+typedef struct{
+    uint32_t timeStamp;
+    uint32_t evType;
 } btnEvent_t;
 
 void btnInit();

@@ -13,39 +13,51 @@
 
 static xQueueHandle btn_ev_queue = NULL;
 
-void btn_poll_task(void *arg){
-    uint32_t preB1, preB2, lB1, lB2; 
-    lB1 = gpio_get_level(BTN1_PIN);
-    preB1 = lB1;
-    lB2 = gpio_get_level(BTN2_PIN);
-    preB2 = lB2;
-    btnEvent_t ev;
-    for(;;){
-        lB1 = gpio_get_level(BTN1_PIN);
-        lB2 = gpio_get_level(BTN2_PIN);
-        if(lB1 != preB1){
-            preB1 = lB1;
-            ev = BTN1_CLICK;
-            xQueueSend(btn_ev_queue, &ev, portMAX_DELAY);
-        }
-        if(lB2 != preB2){
-            preB2 = lB2;
-            ev = BTN2_CLICK;
-            xQueueSend(btn_ev_queue, &ev, portMAX_DELAY);
-        }
-        vTaskDelay(10 / portTICK_RATE_MS);
-    }
-}
-
 btnEvent_t btnWaitForEvent(){
     btnEvent_t ev;
-    xQueueReceive(btn_ev_queue, &ev, portMAX_DELAY);
-    return ev;
+    static uint32_t lastTBtn1 = 0, lastTBtn2 = 0;
+    
+    do{
+        xQueueReceive(btn_ev_queue, &ev, portMAX_DELAY);
+        
+        if(ev.evType == BTN1_CLICK){
+            uint32_t deltaT = ev.timeStamp - lastTBtn1;
+            lastTBtn1 = ev.timeStamp;
+            if(deltaT > 5){ // de-bounce by software --> i.e. accept only events after a certain time delays
+                return ev;
+            } 
+        }
+
+        if(ev.evType == BTN2_CLICK){
+            uint32_t deltaT = ev.timeStamp - lastTBtn2;
+            lastTBtn2 = ev.timeStamp;
+            if(deltaT > 5) { // de-bounce by software --> i.e. accept only events after a certain time delays
+                return ev;
+            } 
+        }
+    }while(1);
 }
+
+
+
+static void IRAM_ATTR gpio_isr_handler1(void* arg){
+    btnEvent_t ev;
+    ev.timeStamp = xTaskGetTickCountFromISR();
+    ev.evType = BTN1_CLICK;
+    xQueueSendFromISR(btn_ev_queue, &ev, NULL);
+}
+
+static void IRAM_ATTR gpio_isr_handler2(void* arg){
+    btnEvent_t ev;
+    ev.timeStamp = xTaskGetTickCountFromISR();
+    ev.evType = BTN2_CLICK;
+    xQueueSendFromISR(btn_ev_queue, &ev, NULL);
+}
+
 
 void btnInit(){
     gpio_config_t io_conf;
-    //io_conf.intr_type = GPIO_INTR_ANYEDGE;
+    io_conf.intr_type = GPIO_INTR_ANYEDGE;
     io_conf.pin_bit_mask = GPIO_INPUT_PIN_SEL;
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pull_up_en = 1;
@@ -54,5 +66,10 @@ void btnInit(){
 
     btn_ev_queue = xQueueCreate(10, sizeof(btnEvent_t));
 
-    xTaskCreate(&btn_poll_task, "ptn_poll_task", 2048, 0, 20, 0);
+    //install gpio isr service
+    gpio_install_isr_service(0);
+    //hook isr handler for specific gpio pin
+    gpio_isr_handler_add(BTN1_PIN, gpio_isr_handler1, (void*) BTN1_PIN);
+    //hook isr handler for specific gpio pin
+    gpio_isr_handler_add(BTN2_PIN, gpio_isr_handler2, (void*) BTN2_PIN);
 }
