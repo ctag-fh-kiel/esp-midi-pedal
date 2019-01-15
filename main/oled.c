@@ -2,6 +2,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "u8g2_esp32_hal.h"
+#include "ctag-oled.xbm"
 
 u8g2_t u8g2;
 
@@ -31,6 +32,12 @@ void oledInit(){
 
 	ESP_LOGI("OLED", "u8g2_SetPowerSave");
 	u8g2_SetPowerSave(&u8g2, 0); // wake up display
+}
+
+void oledDrawLogo(){
+    u8g2_ClearBuffer(&u8g2);
+    u8g2_DrawXBM(&u8g2, 0, 0, ctag_oled_width, ctag_oled_height, ctag_oled_bits);
+    u8g2_SendBuffer(&u8g2);
 }
 
 void oledSet(oledStates_t state){

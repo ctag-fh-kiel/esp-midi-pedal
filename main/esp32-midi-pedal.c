@@ -10,7 +10,7 @@ void app_main()
    ledInit();
    midiInit();
    btnInit();
-   oledSet(STOP);
+   oledDrawLogo();
    ledSet(BTN1_LED, F_BLUE);
    ledSet(BTN2_LED, F_BLUE);
    btnEvent_t ev;
@@ -19,7 +19,6 @@ void app_main()
       ev = btnWaitForEvent();
       switch(ev.evType){
          case BTN1_CLICK:
-            ESP_LOGI("MAIN", "60");
             midiSendNoteOn(11, 60);
             if(ledStateBtn1 == BLUE){
                ledStateBtn1 = RED;
@@ -33,7 +32,6 @@ void app_main()
             }
             break;
          case BTN2_CLICK:
-            ESP_LOGI("MAIN", "64");
             midiSendNoteOn(11, 64);
             if(ledStateBtn2 == BLUE){
                ledStateBtn2 = RED;

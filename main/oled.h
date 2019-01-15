@@ -6,3 +6,4 @@ typedef enum{
 
 void oledInit();
 void oledSet(oledStates_t state);
+void oledDrawLogo();
